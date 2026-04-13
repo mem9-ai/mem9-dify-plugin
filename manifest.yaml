@@ -1,0 +1,33 @@
+version: 0.0.1
+type: plugin
+author: mem9-ai
+name: mem9
+label:
+  en_US: mem9
+  zh_Hans: mem9
+description:
+  en_US: Long-term memory for AI agents. Search and store memories via mem9.
+  zh_Hans: AI 智能体的长期记忆。通过 mem9 搜索和存储记忆。
+icon: icon.svg
+tags:
+  - utilities
+resource:
+  memory: 1048576
+  permission:
+    tool:
+      enabled: true
+    endpoint:
+      enabled: false
+meta:
+  version: 0.0.1
+  arch:
+    - amd64
+    - arm64
+  runner:
+    language: python
+    version: "3.12"
+    entrypoint: main
+created_at: 2026-04-13T00:00:00Z
+plugins:
+  tools:
+    - provider/mem9.yaml

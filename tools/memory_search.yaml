@@ -1,0 +1,57 @@
+identity:
+  name: memory_search
+  author: mem9-ai
+  label:
+    en_US: Memory Search
+    zh_Hans: 记忆搜索
+description:
+  human:
+    en_US: Search relevant memories from mem9 long-term memory.
+    zh_Hans: 从 mem9 长期记忆中搜索相关记忆。
+  llm: >-
+    Search the user's long-term memory for information relevant to the current
+    conversation. Use this tool to recall facts, preferences, and prior context
+    that can help you give a better answer.
+parameters:
+  - name: query
+    type: string
+    required: true
+    label:
+      en_US: Search Query
+      zh_Hans: 搜索关键词
+    human_description:
+      en_US: The search query to find relevant memories.
+      zh_Hans: 用于查找相关记忆的搜索关键词。
+    llm_description: >-
+      The search query. Formulate a concise query that captures what information
+      you need from the user's memory. For example, "user's preferred language"
+      or "project deadline".
+    form: llm
+  - name: session_id
+    type: string
+    required: false
+    label:
+      en_US: Session ID
+      zh_Hans: 会话 ID
+    human_description:
+      en_US: >-
+        mem9 session scope. Bind to sys.conversation_id for per-conversation
+        memory isolation.
+      zh_Hans: mem9 会话作用域。绑定 sys.conversation_id 以实现按对话隔离记忆。
+    form: form
+  - name: limit
+    type: number
+    required: false
+    default: 10
+    min: 1
+    max: 20
+    label:
+      en_US: Result Limit
+      zh_Hans: 结果数量限制
+    human_description:
+      en_US: Maximum number of memories to return.
+      zh_Hans: 返回的最大记忆数量。
+    form: form
+extra:
+  python:
+    source: tools/memory_search.py

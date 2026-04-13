@@ -1,0 +1,54 @@
+identity:
+  author: mem9-ai
+  name: mem9
+  label:
+    en_US: mem9
+    zh_Hans: mem9
+  description:
+    en_US: Long-term memory for AI agents powered by mem9.
+    zh_Hans: 基于 mem9 的 AI 智能体长期记忆。
+  icon: icon.svg
+  tags:
+    - utilities
+credentials_for_provider:
+  mem9_base_url:
+    type: text-input
+    required: false
+    default: "https://api.mem9.ai"
+    label:
+      en_US: mem9 API Base URL
+      zh_Hans: mem9 API 基础 URL
+    help:
+      en_US: Base URL of the mem9 API. Use default for hosted mem9.
+      zh_Hans: mem9 API 的基础 URL。使用默认值连接托管版 mem9。
+    placeholder:
+      en_US: https://api.mem9.ai
+  mem9_api_key:
+    type: secret-input
+    required: true
+    label:
+      en_US: API Key
+      zh_Hans: API 密钥
+    help:
+      en_US: Your mem9 API key (space ID). Used to authenticate and identify your mem9 space.
+      zh_Hans: 你的 mem9 API 密钥（空间 ID）。用于认证和标识你的 mem9 空间。
+    placeholder:
+      en_US: your-api-key
+  mem9_agent_id:
+    type: text-input
+    required: false
+    default: "dify"
+    label:
+      en_US: Agent ID
+      zh_Hans: 智能体 ID
+    help:
+      en_US: Agent identifier sent with mem9 requests. Defaults to "dify".
+      zh_Hans: 随 mem9 请求发送的智能体标识符。默认为 "dify"。
+    placeholder:
+      en_US: dify
+tools:
+  - tools/memory_search.yaml
+  - tools/memory_store.yaml
+extra:
+  python:
+    source: provider/mem9.py

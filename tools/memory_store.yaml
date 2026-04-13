@@ -1,0 +1,45 @@
+identity:
+  name: memory_store
+  author: mem9-ai
+  label:
+    en_US: Memory Store
+    zh_Hans: 记忆存储
+description:
+  human:
+    en_US: Store content into mem9 long-term memory via smart extraction.
+    zh_Hans: 通过智能提取将内容存储到 mem9 长期记忆中。
+  llm: >-
+    Store important information into the user's long-term memory. Use this tool
+    to remember facts, preferences, decisions, and other context that should
+    persist across conversations. The content will be automatically processed
+    to extract and reconcile key facts.
+parameters:
+  - name: content
+    type: string
+    required: true
+    label:
+      en_US: Content
+      zh_Hans: 内容
+    human_description:
+      en_US: The content to store in memory.
+      zh_Hans: 要存储到记忆中的内容。
+    llm_description: >-
+      The content to remember. Include all relevant context: facts, user
+      preferences, decisions, or important information from the conversation
+      that should be available in future interactions.
+    form: llm
+  - name: session_id
+    type: string
+    required: false
+    label:
+      en_US: Session ID
+      zh_Hans: 会话 ID
+    human_description:
+      en_US: >-
+        mem9 session scope. Bind to sys.conversation_id for per-conversation
+        memory isolation.
+      zh_Hans: mem9 会话作用域。绑定 sys.conversation_id 以实现按对话隔离记忆。
+    form: form
+extra:
+  python:
+    source: tools/memory_store.py

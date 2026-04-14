@@ -9,6 +9,7 @@ description:
   en_US: Long-term memory for AI agents. Search and store memories via mem9.
   zh_Hans: AI 智能体的长期记忆。通过 mem9 搜索和存储记忆。
 icon: icon.svg
+privacy: ./PRIVACY.md
 tags:
   - utilities
 resource:

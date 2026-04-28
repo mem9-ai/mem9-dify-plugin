@@ -9,9 +9,36 @@ description:
     en_US: Search relevant memories from mem9 long-term memory.
     zh_Hans: 从 mem9 长期记忆中搜索相关记忆。
   llm: >-
-    Search the user's long-term memory for information relevant to the current
-    conversation. Use this tool to recall facts, preferences, and prior context
-    that can help you give a better answer.
+    Recall relevant facts from long-term memory before answering questions
+    that depend on prior context — about the user, the project, the team,
+    or any persistent entity.
+
+
+    Call this tool:
+
+    - Before answering anything that references user history, preferences,
+    biographical info, or past decisions.
+
+    - When the user asks about something previously discussed or decided
+    (e.g. project deadlines, team conventions, prior choices).
+
+    - At the start of a session if you need ongoing user or project context.
+
+
+    Do NOT call this tool for:
+
+    - Generic factual questions unrelated to the user (e.g. "capital of
+    France").
+
+    - Trivial greetings or pure task instructions with no historical
+    dependency.
+
+    - Questions whose answer is fully visible in the current turn.
+
+
+    The result includes `retry_hint` when the search is empty or all matches
+    are low confidence — follow that hint and call again with a rephrased
+    query before giving up.
 parameters:
   - name: query
     type: string
@@ -23,10 +50,45 @@ parameters:
       en_US: The search query to find relevant memories.
       zh_Hans: 用于查找相关记忆的搜索关键词。
     llm_description: >-
-      The search query. Formulate a concise query that captures what information
-      you need from the user's memory. For example, "user's preferred language"
-      or "project deadline".
+      A short declarative description of what to recall, NOT a question.
+      mem9 stores facts as declarative statements, so query phrasing closer
+      to that form retrieves better.
+
+
+      Good examples:
+
+      - "user's preferred programming language"
+
+      - "project deadline"
+
+      - "team coding conventions"
+
+
+      Bad examples (avoid):
+
+      - "what is the user's preferred programming language?"
+
+      - "tell me about the user's project"
+
+      - the user's full original utterance copied verbatim
     form: llm
+  - name: api_key
+    type: string
+    required: false
+    label:
+      en_US: API Key (Multi-space mode)
+      zh_Hans: API 密钥（多空间模式）
+    human_description:
+      en_US: >-
+        mem9 API Key for this call. Required when the plugin Authorization
+        Mode is Multi-space; ignored in Single space mode. For security,
+        bind this to a Dify workspace environment variable
+        (e.g. {{env.MEM9_API_KEY_TEAM_A}}) rather than pasting the key.
+      zh_Hans: >-
+        本次调用使用的 mem9 API 密钥。插件授权模式为多空间时必填；
+        单空间模式下忽略。出于安全考虑，建议将此处绑定到 Dify 工作空间级
+        环境变量（例如 {{env.MEM9_API_KEY_TEAM_A}}），而不是直接粘贴密钥。
+    form: form
   - name: session_id
     type: string
     required: false

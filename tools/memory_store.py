@@ -13,7 +13,36 @@ class MemoryStoreTool(Tool):
         base_url = (
             self.runtime.credentials.get("mem9_base_url") or "https://api.mem9.ai"
         ).rstrip("/")
-        api_key = self.runtime.credentials.get("mem9_api_key", "")
+        # Default single_space so any credential dict missing this field
+        # still routes deterministically.
+        auth_mode = self.runtime.credentials.get("auth_mode") or "single_space"
+        if auth_mode == "multi_space":
+            api_key = (tool_parameters.get("api_key") or "").strip()
+            if not api_key:
+                yield self.create_json_message(
+                    {
+                        "ok": False,
+                        "error": (
+                            "Multi-space mode requires the API Key on this "
+                            "node. Configure it on the workflow node, or "
+                            "switch the plugin to Single space mode."
+                        ),
+                    }
+                )
+                return
+        else:
+            api_key = self.runtime.credentials.get("mem9_api_key", "")
+            if not api_key:
+                yield self.create_json_message(
+                    {
+                        "ok": False,
+                        "error": (
+                            "Single space mode requires the API Key in "
+                            "plugin authorization."
+                        ),
+                    }
+                )
+                return
         agent_id = self.runtime.credentials.get("mem9_agent_id", "") or "dify"
 
         content = tool_parameters.get("content", "").strip()
@@ -54,15 +83,24 @@ class MemoryStoreTool(Tool):
                 return
 
             data = resp.json()
-            yield self.create_json_message(
-                {
-                    "ok": True,
-                    "status": data.get("status", "ok"),
-                    "memories_changed": data.get("memories_changed", 0),
-                    "insight_ids": data.get("insight_ids", []),
-                    "session_id": session_id or None,
-                }
-            )
+            # Server contract: HTTP body emits only "ok" (sync) or "accepted" (async).
+            # Revisit `is_async` if other statuses (failed/partial) ever appear here.
+            status = data.get("status", "accepted")
+            is_async = status != "ok"
+            result: dict[str, Any] = {
+                "ok": True,
+                "status": status,
+                "accepted": True,
+                "searchable_now": not is_async,
+                "session_id": session_id or None,
+            }
+            if is_async:
+                result["hint"] = (
+                    "Stored asynchronously. Smart extraction is in progress "
+                    "and this memory is not yet searchable. Do not call "
+                    "memory_search for this content in the next turn."
+                )
+            yield self.create_json_message(result)
         except requests.RequestException as e:
             yield self.create_json_message(
                 {"ok": False, "error": f"Failed to connect to mem9: {e}"}

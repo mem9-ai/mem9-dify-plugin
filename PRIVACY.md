@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: 2026-04-14
+Last updated: 2026-04-28
 
 This Privacy Policy describes how the mem9 Dify Plugin handles information when it is used in Dify.
 
@@ -34,6 +34,7 @@ The plugin may process and transmit the following information:
 
 5. API credentials
    - The `mem9_api_key` is stored by the Dify instance as a plugin credential and transmitted to the configured mem9 API endpoint in the `X-API-Key` header for authentication and tenant identification.
+   - When the plugin is configured in Multi-space Authorization Mode, an additional API Key may be supplied as a parameter on each workflow node (`api_key`). The plugin reads it only at call time and passes it to mem9 in the `X-API-Key` header. The plugin does not persist this node-level API Key beyond the call. Operators may bind this parameter to a Dify workspace environment variable so the actual key value is not stored in the workflow definition.
    - The plugin does not intentionally expose API keys to language model outputs or store API keys as memories.
 
 Following Dify's privacy classification guidance, this plugin may process indirect identifiers such as session IDs and agent IDs, and may process user-provided content that can be combined with other data to identify a person if such content is submitted to the memory tools.
@@ -45,7 +46,7 @@ The plugin uses the transmitted information only to provide mem9 memory function
 - `memory_store` sends text to mem9 smart ingest so mem9 can extract, reconcile, embed, and store useful long-term memory.
 - `memory_search` sends a query to mem9 so mem9 can retrieve relevant memories and return a concise ranked result list.
 - `session_id` and `mem9_agent_id` are used to scope, organize, and retrieve memories.
-- `mem9_api_key` is used for authentication and tenant identification.
+- API Key(s) — the provider-level `mem9_api_key` and, in Multi-space mode, any per-node `api_key` parameter — are used for authentication and tenant identification.
 
 ## Hosted mem9 Service
 
@@ -63,7 +64,7 @@ In self-hosted deployments, data storage, access control, retention, security, s
 
 ## Data Storage and Retention
 
-The plugin itself does not store memory content. Dify stores plugin credentials according to the Dify instance's credential storage configuration.
+The plugin itself does not store memory content. Dify stores plugin credentials according to the Dify instance's credential storage configuration. Workflow node parameters (including any per-node API Key in Multi-space mode) are stored as part of the Dify workflow definition by the Dify instance.
 
 Memory content and derived memory records are stored by the configured mem9 service. For hosted mem9, memories are retained in the user's mem9 workspace until deleted by the user or workspace administrator via the mem9 API or dashboard. For self-hosted mem9, retention is controlled by the user's deployment and database configuration.
 
@@ -77,7 +78,9 @@ Users or workspace administrators can delete memories through the mem9 API or th
 
 Users and Dify workspace administrators are responsible for:
 
-- Configuring the correct `mem9_base_url` and `mem9_api_key`.
+- Configuring the correct `mem9_base_url`, Authorization Mode, and any required API Key(s).
+- Selecting an appropriate Authorization Mode (Single space or Multi-space) for the workflow.
+- In Multi-space Authorization Mode, providing per-node API Keys via Dify workspace environment variables when possible, rather than pasting plain-text keys into workflow nodes.
 - Deciding when Dify agents or workflows call `memory_store`.
 - Avoiding storage of sensitive information that should not become long-term memory.
 - Configuring `session_id` appropriately, for example by binding it to Dify's conversation ID for per-conversation isolation.

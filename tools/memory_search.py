@@ -13,7 +13,40 @@ class MemorySearchTool(Tool):
         base_url = (
             self.runtime.credentials.get("mem9_base_url") or "https://api.mem9.ai"
         ).rstrip("/")
-        api_key = self.runtime.credentials.get("mem9_api_key", "")
+        # Default single_space so any credential dict missing this field
+        # still routes deterministically.
+        auth_mode = self.runtime.credentials.get("auth_mode") or "single_space"
+        if auth_mode == "multi_space":
+            api_key = (tool_parameters.get("api_key") or "").strip()
+            if not api_key:
+                yield self.create_json_message(
+                    {
+                        "ok": False,
+                        "error": (
+                            "Multi-space mode requires the API Key on this "
+                            "node. Configure it on the workflow node, or "
+                            "switch the plugin to Single space mode."
+                        ),
+                        "memories": [],
+                        "total": 0,
+                    }
+                )
+                return
+        else:
+            api_key = self.runtime.credentials.get("mem9_api_key", "")
+            if not api_key:
+                yield self.create_json_message(
+                    {
+                        "ok": False,
+                        "error": (
+                            "Single space mode requires the API Key in "
+                            "plugin authorization."
+                        ),
+                        "memories": [],
+                        "total": 0,
+                    }
+                )
+                return
         agent_id = self.runtime.credentials.get("mem9_agent_id", "") or "dify"
 
         query = tool_parameters.get("query", "").strip()
@@ -54,20 +87,39 @@ class MemorySearchTool(Tool):
 
             data = resp.json()
             raw_memories = data.get("memories", [])
+            session_scoped = bool(session_id)
+
+            base_result: dict[str, Any] = {
+                "ok": True,
+                "effective_query": query,
+                "session_scoped": session_scoped,
+                "result_count": len(raw_memories),
+                "session_id": session_id or None,
+            }
 
             if not raw_memories:
-                yield self.create_json_message(
-                    {"ok": True, "memories": [], "total": 0, "session_id": session_id or None}
+                base_result["memories"] = []
+                base_result["total"] = 0
+                base_result["retry_hint"] = (
+                    "No memories matched. Possible fixes: "
+                    "(1) rephrase as a short declarative statement instead of a question "
+                    "(e.g. 'user prefers Python' rather than 'what language does the user like?'); "
+                    "(2) try broader or different keywords."
                 )
+                yield self.create_json_message(base_result)
                 return
 
             memories: list[dict[str, Any]] = []
+            max_score: float | None = None
             for m in raw_memories:
                 entry: dict[str, Any] = {"content": m.get("content", "").strip()}
                 score = m.get("score")
                 if score is not None:
                     try:
-                        entry["score"] = float(score)
+                        score_f = float(score)
+                        entry["score"] = score_f
+                        if max_score is None or score_f > max_score:
+                            max_score = score_f
                     except (TypeError, ValueError):
                         entry["score"] = score
                 if m.get("memory_type"):
@@ -76,9 +128,19 @@ class MemorySearchTool(Tool):
                     entry["relative_age"] = m["relative_age"]
                 memories.append(entry)
 
-            yield self.create_json_message(
-                {"ok": True, "memories": memories, "total": len(memories), "session_id": session_id or None}
-            )
+            base_result["memories"] = memories
+            base_result["total"] = len(memories)
+
+            # All matches below 0.3 likely means the query phrasing doesn't
+            # align with how facts were stored; nudge FC model to rephrase.
+            if max_score is not None and max_score < 0.3:
+                base_result["retry_hint"] = (
+                    "All matches have low confidence. The query may not align "
+                    "with how facts were stored. Consider rephrasing as a "
+                    "declarative statement or using more specific keywords."
+                )
+
+            yield self.create_json_message(base_result)
         except requests.RequestException as e:
             yield self.create_json_message(
                 {"ok": False, "error": f"Failed to connect to mem9: {e}", "memories": [], "total": 0}

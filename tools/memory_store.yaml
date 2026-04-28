@@ -9,10 +9,35 @@ description:
     en_US: Store content into mem9 long-term memory via smart extraction.
     zh_Hans: 通过智能提取将内容存储到 mem9 长期记忆中。
   llm: >-
-    Store important information into the user's long-term memory. Use this tool
-    to remember facts, preferences, decisions, and other context that should
-    persist across conversations. The content will be automatically processed
-    to extract and reconcile key facts.
+    Save a durable fact about the user, the project, or shared context into
+    long-term memory so it persists across conversations.
+
+
+    Call this tool when:
+
+    - The user states a preference, decision, plan, or stable fact (e.g.
+    "I prefer Python", "ship by Friday", "team uses React").
+
+    - The user provides identifying or biographical info (name, role, location).
+
+    - A consequential decision is made that future conversations should
+    remember.
+
+
+    Do NOT call this tool for:
+
+    - Transient context, casual greetings, or one-off task instructions.
+
+    - Tool outputs or computations that can be re-derived.
+
+    - Information only relevant to the current turn.
+
+    - Restating questions the user just asked (questions are not facts).
+
+
+    Calls are processed asynchronously by mem9's smart extraction pipeline.
+    The stored memory is not immediately searchable — do not call
+    memory_search for the same content in the next turn.
 parameters:
   - name: content
     type: string
@@ -24,10 +49,41 @@ parameters:
       en_US: The content to store in memory.
       zh_Hans: 要存储到记忆中的内容。
     llm_description: >-
-      The content to remember. Include all relevant context: facts, user
-      preferences, decisions, or important information from the conversation
-      that should be available in future interactions.
+      The fact to remember, written as a short declarative statement (not a
+      question, and not the user's raw utterance). Include the subject
+      explicitly. The subject can be the user, the project, the team, or
+      any shared entity.
+
+
+      Good examples:
+
+      - "User prefers Python"
+
+      - "Project ships on Friday"
+
+      - "Team uses React for the frontend"
+
+
+      Avoid vague pronouns and transient phrasing. One fact per call; if
+      the user shared multiple facts, call this tool multiple times.
     form: llm
+  - name: api_key
+    type: string
+    required: false
+    label:
+      en_US: API Key (Multi-space mode)
+      zh_Hans: API 密钥（多空间模式）
+    human_description:
+      en_US: >-
+        mem9 API Key for this call. Required when the plugin Authorization
+        Mode is Multi-space; ignored in Single space mode. For security,
+        bind this to a Dify workspace environment variable
+        (e.g. {{env.MEM9_API_KEY_TEAM_A}}) rather than pasting the key.
+      zh_Hans: >-
+        本次调用使用的 mem9 API 密钥。插件授权模式为多空间时必填；
+        单空间模式下忽略。出于安全考虑，建议将此处绑定到 Dify 工作空间级
+        环境变量（例如 {{env.MEM9_API_KEY_TEAM_A}}），而不是直接粘贴密钥。
+    form: form
   - name: session_id
     type: string
     required: false

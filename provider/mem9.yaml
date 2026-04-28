@@ -11,6 +11,32 @@ identity:
   tags:
     - utilities
 credentials_for_provider:
+  auth_mode:
+    type: select
+    required: true
+    default: single_space
+    options:
+      - value: single_space
+        label:
+          en_US: Single space (configure API Key here)
+          zh_Hans: 单空间（在此处配置 API Key）
+      - value: multi_space
+        label:
+          en_US: Multi-space (configure API Key per workflow node)
+          zh_Hans: 多空间（在每个工作流节点配置 API Key）
+    label:
+      en_US: Authorization Mode
+      zh_Hans: 授权模式
+    help:
+      en_US: >-
+        Single space: bind one mem9 space to this plugin install via the API
+        Key field below. Multi-space: leave the API Key empty and provide
+        it per call on each workflow node, so a single workflow can access
+        multiple mem9 spaces.
+      zh_Hans: >-
+        单空间：通过下方 API Key 字段将一个 mem9 空间绑定到此插件安装。
+        多空间：将 API Key 留空，在每个工作流节点的工具参数里单独配置，
+        从而让一个工作流访问多个 mem9 空间。
   mem9_base_url:
     type: text-input
     required: false
@@ -25,13 +51,18 @@ credentials_for_provider:
       en_US: https://api.mem9.ai
   mem9_api_key:
     type: secret-input
-    required: true
+    required: false
     label:
-      en_US: API Key
-      zh_Hans: API 密钥
+      en_US: API Key (leave empty in multi-space mode)
+      zh_Hans: API 密钥（多空间模式下请留空）
     help:
-      en_US: Your mem9 API key (space ID). Used to authenticate and identify your mem9 space.
-      zh_Hans: 你的 mem9 API 密钥（空间 ID）。用于认证和标识你的 mem9 空间。
+      en_US: >-
+        Your mem9 API key. Required in Single space mode. In Multi-space
+        mode, leave this empty — configure the API Key on each workflow
+        node instead.
+      zh_Hans: >-
+        你的 mem9 API 密钥。单空间模式下必填。多空间模式下请留空——
+        在每个工作流节点上单独配置 API Key。
     placeholder:
       en_US: your-api-key
   mem9_agent_id:

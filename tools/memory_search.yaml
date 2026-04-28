@@ -24,11 +24,15 @@ description:
 
     - At the start of a session if you need ongoing user or project context.
 
+    - Before making personalized recommendations, choices, or suggestions
+    for the user — even when the user does not explicitly mention prior
+    context. Examples: "recommend a product", "help me pick X", "what
+    should I do about Y", "which option suits me". Recall any stored
+    preferences, budget, brand likes/dislikes, or prior decisions before
+    answering.
+
 
     Do NOT call this tool for:
-
-    - Generic factual questions unrelated to the user (e.g. "capital of
-    France").
 
     - Trivial greetings or pure task instructions with no historical
     dependency.

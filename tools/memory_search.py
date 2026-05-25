@@ -61,6 +61,8 @@ class MemorySearchTool(Tool):
             limit = int(tool_parameters.get("limit", 10))
         except (TypeError, ValueError):
             limit = 10
+        limit = max(1, min(limit, 20))
+        upstream_limit = min(max(limit * 3, limit), 100)
 
         url = f"{base_url}/v1alpha2/mem9s/memories"
         headers: dict[str, str] = {
@@ -68,9 +70,11 @@ class MemorySearchTool(Tool):
             "X-API-Key": api_key,
         }
 
-        params: dict[str, str] = {"q": query, "limit": str(limit)}
+        params: dict[str, str] = {"q": query, "limit": str(upstream_limit)}
         if session_id:
             params["session_id"] = session_id
+        if is_truthy(tool_parameters.get("scanAll")):
+            params["scanAll"] = "true"
 
         try:
             resp = requests.get(url, headers=headers, params=params, timeout=30)
@@ -93,7 +97,7 @@ class MemorySearchTool(Tool):
                 "ok": True,
                 "effective_query": query,
                 "session_scoped": session_scoped,
-                "result_count": len(raw_memories),
+                "available_result_count": len(raw_memories),
                 "session_id": session_id or None,
             }
 
@@ -109,10 +113,25 @@ class MemorySearchTool(Tool):
                 yield self.create_json_message(base_result)
                 return
 
+            raw_memories = sorted(
+                raw_memories,
+                key=lambda memory: (
+                    numeric_value(memory.get("confidence")),
+                    numeric_value(memory.get("score")),
+                ),
+                reverse=True,
+            )
+
             memories: list[dict[str, Any]] = []
             max_score: float | None = None
-            for m in raw_memories:
+            for m in raw_memories[:limit]:
                 entry: dict[str, Any] = {"content": m.get("content", "").strip()}
+                confidence = m.get("confidence")
+                if confidence is not None:
+                    try:
+                        entry["confidence"] = int(confidence)
+                    except (TypeError, ValueError):
+                        entry["confidence"] = confidence
                 score = m.get("score")
                 if score is not None:
                     try:
@@ -129,6 +148,7 @@ class MemorySearchTool(Tool):
                 memories.append(entry)
 
             base_result["memories"] = memories
+            base_result["result_count"] = len(memories)
             base_result["total"] = len(memories)
 
             # All matches below 0.3 likely means the query phrasing doesn't
@@ -145,3 +165,18 @@ class MemorySearchTool(Tool):
             yield self.create_json_message(
                 {"ok": False, "error": f"Failed to connect to mem9: {e}", "memories": [], "total": 0}
             )
+
+
+def is_truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return False
+
+
+def numeric_value(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return -1.0

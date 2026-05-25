@@ -118,6 +118,21 @@ parameters:
       en_US: Maximum number of memories to return.
       zh_Hans: 返回的最大记忆数量。
     form: form
+  - name: scanAll
+    type: boolean
+    required: false
+    default: false
+    label:
+      en_US: Scan all Space Chain nodes
+      zh_Hans: 扫描所有空间链节点
+    human_description:
+      en_US: >-
+        When using a Space Chain API key, continue searching every Space in the
+        chain instead of stopping after a high-confidence match.
+      zh_Hans: >-
+        使用 Space Chain API key 时，强制继续搜索链中的每个 Space，而不是在
+        命中高置信度结果后提前停止。
+    form: form
 extra:
   python:
     source: tools/memory_search.py

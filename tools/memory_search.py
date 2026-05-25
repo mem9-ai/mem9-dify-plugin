@@ -71,6 +71,8 @@ class MemorySearchTool(Tool):
         params: dict[str, str] = {"q": query, "limit": str(limit)}
         if session_id:
             params["session_id"] = session_id
+        if is_truthy(tool_parameters.get("scanAll")):
+            params["scanAll"] = "true"
 
         try:
             resp = requests.get(url, headers=headers, params=params, timeout=30)
@@ -145,3 +147,11 @@ class MemorySearchTool(Tool):
             yield self.create_json_message(
                 {"ok": False, "error": f"Failed to connect to mem9: {e}", "memories": [], "total": 0}
             )
+
+
+def is_truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return False

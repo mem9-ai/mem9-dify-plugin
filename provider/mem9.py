@@ -4,6 +4,8 @@ import requests
 from dify_plugin import ToolProvider
 from dify_plugin.errors.tool import ToolProviderCredentialValidationError
 
+from tools.mem9_errors import format_provider_error
+
 
 class Mem9Provider(ToolProvider):
     def _validate_credentials(self, credentials: dict[str, Any]) -> None:
@@ -39,10 +41,7 @@ class Mem9Provider(ToolProvider):
         try:
             resp = requests.get(url, headers=headers, params={"limit": "1"}, timeout=15)
             if resp.status_code >= 400:
-                body = resp.text[:200]
-                raise ToolProviderCredentialValidationError(
-                    f"mem9 returned HTTP {resp.status_code}: {body}"
-                )
+                raise ToolProviderCredentialValidationError(format_provider_error(resp))
         except requests.RequestException as e:
             raise ToolProviderCredentialValidationError(
                 f"Failed to connect to mem9: {e}"

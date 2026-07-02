@@ -5,6 +5,8 @@ import requests
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 
+from tools.mem9_errors import build_mem9_error_payload
+
 
 class MemorySearchTool(Tool):
     def _invoke(
@@ -79,14 +81,10 @@ class MemorySearchTool(Tool):
         try:
             resp = requests.get(url, headers=headers, params=params, timeout=30)
             if resp.status_code >= 400:
-                yield self.create_json_message(
-                    {
-                        "ok": False,
-                        "error": "mem9 request failed",
-                        "status_code": resp.status_code,
-                        "detail": resp.text[:500],
-                    }
-                )
+                payload = build_mem9_error_payload(resp, "search memories")
+                payload["memories"] = []
+                payload["total"] = 0
+                yield self.create_json_message(payload)
                 return
 
             data = resp.json()

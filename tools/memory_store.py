@@ -5,6 +5,8 @@ import requests
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 
+from tools.mem9_errors import build_mem9_error_payload
+
 
 class MemoryStoreTool(Tool):
     def _invoke(
@@ -72,14 +74,7 @@ class MemoryStoreTool(Tool):
         try:
             resp = requests.post(url, headers=headers, json=body, timeout=120)
             if resp.status_code >= 400:
-                yield self.create_json_message(
-                    {
-                        "ok": False,
-                        "error": "mem9 request failed",
-                        "status_code": resp.status_code,
-                        "detail": resp.text[:500],
-                    }
-                )
+                yield self.create_json_message(build_mem9_error_payload(resp, "store memory"))
                 return
 
             data = resp.json()

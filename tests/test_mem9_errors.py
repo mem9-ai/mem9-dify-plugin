@@ -11,10 +11,11 @@ BILLING_URL = "https://console.mem9.ai/console/billing/plan"
 
 
 class FakeResponse:
-    def __init__(self, status_code, payload):
+    def __init__(self, status_code, payload, headers=None):
         self.status_code = status_code
         self._payload = payload
         self.text = str(payload)
+        self.headers = headers or {}
 
     def json(self):
         return self._payload
@@ -71,6 +72,82 @@ def test_build_write_quota_payload_uses_spending_limit_action():
     assert payload["quota"]["recommendedAction"]["type"] == "increaseSpendingLimit"
     assert "Mem9 memory saving is temporarily unavailable" in payload["user_message"]
     assert "increase the mem9 spending limit" in payload["user_message"]
+
+
+def test_build_recall_post_quota_rate_limit_payload_uses_retry_guidance():
+    response = FakeResponse(
+        429,
+        {
+            "code": "post_quota_rate_limited",
+            "message": "Post-quota rate limit exceeded.",
+            "details": {
+                "mem9Code": "runtime_quota_denied",
+                "retryable": True,
+                "meter": "memory_recall_requests",
+                "quotaGateResult": {
+                    "outcome": "rateLimited",
+                    "mode": "postQuota",
+                    "reason": "postQuotaRateLimitExceeded",
+                    "postQuotaRateLimit": {
+                        "requestsPerMinute": 4,
+                        "windowDurationSeconds": 60,
+                        "scope": "apiKeyMeter",
+                        "retryAfterSeconds": 23,
+                    },
+                },
+            },
+        },
+    )
+
+    payload = build_mem9_error_payload(response, "search memories")
+
+    assert payload["status_code"] == 429
+    assert payload["code"] == "post_quota_rate_limited"
+    assert payload["quota"]["retryAfterSeconds"] == 23
+    assert "post-quota mode" in payload["user_message"]
+    assert "temporary rate limit" in payload["user_message"]
+    assert "wait 23 seconds before trying again" in payload["user_message"]
+    assert "open the mem9 console" not in payload["user_message"]
+
+
+def test_build_write_post_quota_rate_limit_payload_keeps_billing_action():
+    response = FakeResponse(
+        429,
+        {
+            "code": "post_quota_rate_limited",
+            "message": "Post-quota rate limit exceeded.",
+            "details": {
+                "mem9Code": "runtime_quota_denied",
+                "retryable": True,
+                "meter": "memory_write_requests",
+                "recommendedAction": {
+                    "bindingState": "claimed",
+                    "type": "upgradePlan",
+                    "url": BILLING_URL,
+                },
+                "quotaGateResult": {
+                    "outcome": "rateLimited",
+                    "mode": "postQuota",
+                    "reason": "postQuotaRateLimitExceeded",
+                    "postQuotaRateLimit": {
+                        "requestsPerMinute": 2,
+                        "windowDurationSeconds": 60,
+                        "scope": "apiKeyMeter",
+                        "retryAfterSeconds": 1,
+                    },
+                },
+            },
+        },
+    )
+
+    payload = build_mem9_error_payload(response, "store memory")
+
+    assert payload["action_url"] == BILLING_URL
+    assert payload["quota"]["retryAfterSeconds"] == 1
+    assert "Mem9 memory saving is temporarily unavailable" in payload["user_message"]
+    assert "wait 1 second before trying again" in payload["user_message"]
+    assert "more continuous mem9 usage" in payload["user_message"]
+    assert payload["user_message"].count(BILLING_URL) == 1
 
 
 def test_provider_error_includes_action_notice():

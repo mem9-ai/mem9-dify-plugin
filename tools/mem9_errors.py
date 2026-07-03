@@ -10,6 +10,7 @@ QUOTA_CODES = {
     "runtime_access_blocked",
     "runtime_quota_denied",
 }
+DEFAULT_BILLING_ACTION_URL = "https://console.mem9.ai/console/billing/plan"
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
@@ -161,25 +162,15 @@ def _quota_notice_subject(quota: dict[str, Any], operation: str) -> dict[str, st
     }
 
 
-def _retry_instruction(quota: dict[str, Any]) -> str:
-    retry_after = quota.get("retryAfterSeconds")
-    if isinstance(retry_after, int):
-        unit = "second" if retry_after == 1 else "seconds"
-        return f"Ask them to wait {retry_after} {unit} before trying again."
-    return "Ask them to wait briefly before trying again."
-
-
 def _action_instruction(quota: dict[str, Any]) -> str:
     action = _as_dict(quota.get("recommendedAction"))
     action_type = str(action.get("type") or "").strip()
     action_url = str(action.get("url") or "").strip()
     if _is_post_quota_rate_limited(quota):
-        retry = _retry_instruction(quota)
-        if not action_url:
-            return retry
+        billing_url = action_url or DEFAULT_BILLING_ACTION_URL
         return (
-            f"{retry} If they need higher mem9 usage limits, ask them to open "
-            f"this link to adjust billing or upgrade their plan: {action_url}. "
+            "Ask them to open this link to upgrade their mem9 plan or set up "
+            f"billing for higher usage limits: {billing_url}. "
             "Include the link exactly as written."
         )
     if not action_url:
@@ -255,6 +246,8 @@ def build_mem9_error_payload(response: requests.Response, operation: str = "mem9
             payload["quota"]["recommendedAction"] = action
             if action.get("url"):
                 payload["action_url"] = action["url"]
+        elif _is_post_quota_rate_limited(quota):
+            payload["action_url"] = DEFAULT_BILLING_ACTION_URL
         return payload
 
     return {

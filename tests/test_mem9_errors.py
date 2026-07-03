@@ -103,10 +103,12 @@ def test_build_recall_post_quota_rate_limit_payload_uses_retry_guidance():
 
     assert payload["status_code"] == 429
     assert payload["code"] == "post_quota_rate_limited"
+    assert payload["action_url"] == BILLING_URL
     assert payload["quota"]["retryAfterSeconds"] == 23
     assert "temporary request limit" in payload["user_message"]
-    assert "wait 23 seconds before trying again" in payload["user_message"]
-    assert "open the mem9 console" not in payload["user_message"]
+    assert "upgrade their mem9 plan or set up billing" in payload["user_message"]
+    assert "wait 23 seconds before trying again" not in payload["user_message"]
+    assert payload["user_message"].count(BILLING_URL) == 1
 
 
 def test_build_write_post_quota_rate_limit_payload_keeps_billing_action():
@@ -144,8 +146,8 @@ def test_build_write_post_quota_rate_limit_payload_keeps_billing_action():
     assert payload["action_url"] == BILLING_URL
     assert payload["quota"]["retryAfterSeconds"] == 1
     assert "Mem9 memory saving is temporarily unavailable" in payload["user_message"]
-    assert "wait 1 second before trying again" in payload["user_message"]
-    assert "higher mem9 usage limits" in payload["user_message"]
+    assert "upgrade their mem9 plan or set up billing" in payload["user_message"]
+    assert "wait 1 second before trying again" not in payload["user_message"]
     assert payload["user_message"].count(BILLING_URL) == 1
 
 

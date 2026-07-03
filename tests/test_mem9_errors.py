@@ -146,9 +146,50 @@ def test_build_write_post_quota_rate_limit_payload_keeps_billing_action():
     assert payload["action_url"] == BILLING_URL
     assert payload["quota"]["retryAfterSeconds"] == 1
     assert "Mem9 memory saving is temporarily unavailable" in payload["user_message"]
-    assert "upgrade their mem9 plan or set up billing" in payload["user_message"]
+    assert "upgrade their mem9 plan and get more included usage" in payload["user_message"]
     assert "wait 1 second before trying again" not in payload["user_message"]
     assert payload["user_message"].count(BILLING_URL) == 1
+
+
+def test_build_recall_post_quota_rate_limit_payload_keeps_claim_action():
+    response = FakeResponse(
+        429,
+        {
+            "code": "post_quota_rate_limited",
+            "message": "Post-quota rate limit exceeded.",
+            "details": {
+                "mem9Code": "runtime_quota_denied",
+                "retryable": True,
+                "meter": "memory_recall_requests",
+                "recommendedAction": {
+                    "bindingState": "unclaimed",
+                    "type": "claimApiKey",
+                    "url": CLAIM_URL,
+                },
+                "quotaGateResult": {
+                    "outcome": "rateLimited",
+                    "mode": "postQuota",
+                    "reason": "postQuotaRateLimitExceeded",
+                    "postQuotaRateLimit": {
+                        "requestsPerMinute": 4,
+                        "windowDurationSeconds": 60,
+                        "scope": "apiKeyMeter",
+                        "retryAfterSeconds": 23,
+                    },
+                },
+            },
+        },
+    )
+
+    payload = build_mem9_error_payload(response, "search memories")
+
+    assert payload["action_url"] == CLAIM_URL
+    assert payload["quota"]["recommendedAction"]["type"] == "claimApiKey"
+    assert "temporary request limit" in payload["user_message"]
+    assert "sign in or create a mem9 account and claim this API key" in payload["user_message"]
+    assert "After claiming the key, they can upgrade their plan or set up billing" in payload["user_message"]
+    assert "console/billing/plan" not in payload["user_message"]
+    assert payload["user_message"].count(CLAIM_URL) == 1
 
 
 def test_provider_error_includes_action_notice():

@@ -166,11 +166,10 @@ def _action_instruction(quota: dict[str, Any]) -> str:
     action = _as_dict(quota.get("recommendedAction"))
     action_type = str(action.get("type") or "").strip()
     action_url = str(action.get("url") or "").strip()
-    if _is_post_quota_rate_limited(quota):
-        billing_url = action_url or DEFAULT_BILLING_ACTION_URL
+    if _is_post_quota_rate_limited(quota) and not action_url:
         return (
             "Ask them to open this link to upgrade their mem9 plan or set up "
-            f"billing for higher usage limits: {billing_url}. "
+            f"billing for higher usage limits: {DEFAULT_BILLING_ACTION_URL}. "
             "Include the link exactly as written."
         )
     if not action_url:

@@ -114,10 +114,7 @@ def _is_post_quota_rate_limited(quota: dict[str, Any]) -> bool:
 
 def _quota_reason(quota: dict[str, Any]) -> str:
     if _is_post_quota_rate_limited(quota):
-        return (
-            "this API key is in post-quota mode and its temporary rate limit "
-            "for this memory meter has been reached"
-        )
+        return "this API key has reached the temporary request limit for this memory feature"
     action = _as_dict(quota.get("recommendedAction"))
     action_type = str(action.get("type") or "").strip()
     code = str(quota.get("code") or "").strip()
@@ -181,7 +178,7 @@ def _action_instruction(quota: dict[str, Any]) -> str:
         if not action_url:
             return retry
         return (
-            f"{retry} If they need more continuous mem9 usage, ask them to open "
+            f"{retry} If they need higher mem9 usage limits, ask them to open "
             f"this link to adjust billing or upgrade their plan: {action_url}. "
             "Include the link exactly as written."
         )

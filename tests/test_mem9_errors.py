@@ -186,6 +186,26 @@ def test_build_recall_post_quota_rate_limit_payload_keeps_claim_action():
     assert payload["user_message"].count(CLAIM_URL) == 1
 
 
+def test_public_quota_payload_rejects_legacy_action_fallbacks():
+    response = FakeResponse(
+        402,
+        quota_payload("Included quota is exhausted.", {
+            "meter": "memory_recall_requests",
+            "recommendedAction": {
+                "type": "claimApiKey",
+            },
+            "upgradeUrl": CLAIM_URL,
+        }),
+    )
+
+    payload = build_mem9_error_payload(response, "search memories")
+
+    assert "action_url" not in payload
+    assert "recommendedAction" not in payload["quota"]
+    assert "sign in or create a mem9 account and claim this API key" not in payload["user_message"]
+    assert CLAIM_URL not in payload["user_message"]
+
+
 def test_provider_error_uses_admin_wording_with_action_url():
     response = FakeResponse(
         402,

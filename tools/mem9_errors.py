@@ -32,22 +32,30 @@ def _retry_after_header(value: str | None) -> int | None:
     return retry_after if retry_after > 0 else None
 
 
-def _normalize_recommended_action(runtime_quota: dict[str, Any]) -> dict[str, str] | None:
+def _normalize_recommended_action(
+    runtime_quota: dict[str, Any],
+    *,
+    strict_public: bool = False,
+) -> dict[str, str] | None:
     nested = _as_dict(runtime_quota.get("recommendedAction"))
     action_type = str(nested.get("type") or "").strip()
     provider_action_code = str(nested.get("providerActionCode") or "").strip()
     severity = str(nested.get("severity") or "").strip()
     url = str(nested.get("url") or "").strip()
 
-    legacy_action = str(runtime_quota.get("upgradeAction") or "").strip()
-    if not provider_action_code and action_type and action_type != "openUrl":
-        provider_action_code = action_type
-        action_type = "openUrl" if url else ""
-    if not provider_action_code and legacy_action:
-        provider_action_code = legacy_action
-        action_type = "openUrl" if url else ""
-    if not url:
-        url = str(runtime_quota.get("upgradeUrl") or "").strip()
+    if strict_public:
+        if action_type != "openUrl":
+            return None
+    else:
+        legacy_action = str(runtime_quota.get("upgradeAction") or "").strip()
+        if not provider_action_code and action_type and action_type != "openUrl":
+            provider_action_code = action_type
+            action_type = "openUrl" if url else ""
+        if not provider_action_code and legacy_action:
+            provider_action_code = legacy_action
+            action_type = "openUrl" if url else ""
+        if not url:
+            url = str(runtime_quota.get("upgradeUrl") or "").strip()
 
     if not action_type and not provider_action_code and not severity and not url:
         return None
@@ -94,7 +102,8 @@ def parse_runtime_quota_denied(
 
     details = _as_dict(body.get("details"))
     public_category = str(details.get("errorCategory") or "").strip()
-    if public_category == "runtime_quota_denied":
+    is_public_quota_envelope = public_category == "runtime_quota_denied"
+    if is_public_quota_envelope:
         runtime_quota = _as_dict(details.get("runtimeQuota"))
         message = str(body.get("error") or "Runtime usage quota denied.")
     else:
@@ -110,7 +119,7 @@ def parse_runtime_quota_denied(
     if not isinstance(status_code, int):
         return None
 
-    action = _normalize_recommended_action(runtime_quota)
+    action = _normalize_recommended_action(runtime_quota, strict_public=is_public_quota_envelope)
     result: dict[str, Any] = {
         "status_code": status_code,
         "code": "runtime_quota_denied",

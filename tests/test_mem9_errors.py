@@ -267,6 +267,22 @@ def test_format_runtime_state_notice_renders_provider_action():
     assert notice.count(BILLING_URL) == 1
 
 
+def test_format_runtime_state_notice_renders_inactive_api_key():
+    notice = format_runtime_state_notice({
+        "mem9ApiKey": {"status": "inactive"},
+        "meters": [{
+            "meter": "memory_recall_requests",
+            "budgets": [{
+                "type": "includedQuota",
+                "state": "unlimited",
+            }],
+        }],
+    })
+
+    assert "Mem9 API key is inactive" in notice
+    assert "rerun mem9 setup or create a new mem9 API key" in notice
+
+
 def test_fetch_runtime_state_notice_fetches_and_caches(monkeypatch):
     mem9_errors._RUNTIME_STATE_NOTICE_CACHE.clear()
     calls = []
@@ -299,3 +315,41 @@ def test_fetch_runtime_state_notice_fetches_and_caches(monkeypatch):
         {"X-Mnemo-Agent-Id": "dify", "X-API-Key": "key-1"},
         8,
     )]
+
+
+def test_fetch_runtime_state_notice_caches_http_failures(monkeypatch):
+    mem9_errors._RUNTIME_STATE_NOTICE_CACHE.clear()
+    calls = []
+
+    def fake_get(url, headers, timeout):
+        calls.append((url, headers, timeout))
+        return FakeResponse(404, {"error": "missing"})
+
+    monkeypatch.setattr(mem9_errors.requests, "get", fake_get, raising=False)
+    monkeypatch.setattr(mem9_errors.requests, "RequestException", Exception, raising=False)
+
+    first = fetch_runtime_state_notice("https://api.mem9.ai", "key-1", "dify")
+    second = fetch_runtime_state_notice("https://api.mem9.ai", "key-1", "dify")
+
+    assert first == ""
+    assert second == ""
+    assert len(calls) == 1
+
+
+def test_fetch_runtime_state_notice_caches_request_exceptions(monkeypatch):
+    mem9_errors._RUNTIME_STATE_NOTICE_CACHE.clear()
+    calls = []
+
+    def fake_get(url, headers, timeout):
+        calls.append((url, headers, timeout))
+        raise mem9_errors.requests.RequestException("timeout")
+
+    monkeypatch.setattr(mem9_errors.requests, "get", fake_get, raising=False)
+    monkeypatch.setattr(mem9_errors.requests, "RequestException", Exception, raising=False)
+
+    first = fetch_runtime_state_notice("https://api.mem9.ai", "key-1", "dify")
+    second = fetch_runtime_state_notice("https://api.mem9.ai", "key-1", "dify")
+
+    assert first == ""
+    assert second == ""
+    assert len(calls) == 1

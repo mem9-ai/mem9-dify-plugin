@@ -346,6 +346,14 @@ def format_runtime_state_notice(runtime_state: Any) -> str:
         "recommendedAction": _as_dict(state.get("recommendedAction")),
     })
     candidates: list[tuple[int, str, dict[str, str] | None]] = []
+    mem9_api_key = _as_dict(state.get("mem9ApiKey"))
+    if _text(mem9_api_key.get("status")) == "inactive":
+        candidates.append((
+            65,
+            "Mem9 API key is inactive. In your reply, briefly tell the user to rerun mem9 setup or create a new mem9 API key before memory access can continue.",
+            action,
+        ))
+
     if action and (_text(action.get("severity")) or _text(action.get("url"))):
         priority = 50 if action.get("severity") == "blocking" else 20
         candidates.append((
@@ -451,9 +459,11 @@ def fetch_runtime_state_notice(
             timeout=timeout,
         )
     except requests.RequestException:
+        _RUNTIME_STATE_NOTICE_CACHE[cache_key] = (now, "")
         return ""
 
     if response.status_code >= 400:
+        _RUNTIME_STATE_NOTICE_CACHE[cache_key] = (now, "")
         return ""
 
     notice = format_runtime_state_notice(response_json(response))

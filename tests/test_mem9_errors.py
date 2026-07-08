@@ -262,7 +262,7 @@ def test_format_runtime_state_notice_renders_provider_action():
         "meters": [],
     })
 
-    assert "runtime account action" in notice
+    assert "account or billing attention" in notice
     assert "upgrade their mem9 plan" in notice
     assert notice.count(BILLING_URL) == 1
 

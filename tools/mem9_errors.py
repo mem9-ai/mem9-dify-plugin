@@ -291,6 +291,10 @@ def _runtime_mode_label(mode: str) -> str:
     return "provider-managed runtime"
 
 
+def _runtime_warning_message(detail: str) -> str:
+    return f"{detail}. In your reply, include this exact mem9 warning detail: {detail}."
+
+
 def _format_runtime_state_action(action: dict[str, str] | None) -> str:
     action = action or {}
     provider_action_code = _text(action.get("providerActionCode"))
@@ -348,17 +352,19 @@ def format_runtime_state_notice(runtime_state: Any) -> str:
     candidates: list[tuple[int, str, dict[str, str] | None]] = []
     mem9_api_key = _as_dict(state.get("mem9ApiKey"))
     if _text(mem9_api_key.get("status")) == "inactive":
+        detail = "Mem9 API key is inactive; rerun mem9 setup or create a new mem9 API key before memory access can continue"
         candidates.append((
             65,
-            "Mem9 API key is inactive. In your reply, briefly tell the user to rerun mem9 setup or create a new mem9 API key before memory access can continue.",
+            _runtime_warning_message(detail),
             action,
         ))
 
     if action and (_text(action.get("severity")) or _text(action.get("url"))):
         priority = 50 if action.get("severity") == "blocking" else 20
+        detail = "Mem9 needs account or billing attention"
         candidates.append((
             priority,
-            "Mem9 has a runtime account action available. In your reply, briefly tell the user that mem9 needs account or billing attention.",
+            _runtime_warning_message(detail),
             action,
         ))
 
@@ -371,21 +377,24 @@ def format_runtime_state_notice(runtime_state: Any) -> str:
         outcome = _text(gate.get("outcome"))
         mode = _text(gate.get("mode"))
         if outcome == "blocked":
+            detail = f"{feature} is blocked by runtime quota and needs attention before memory access can continue"
             candidates.append((
                 60,
-                f"{feature} is blocked by runtime quota. In your reply, briefly tell the user that {feature} needs attention before memory access can continue.",
+                _runtime_warning_message(detail),
                 action,
             ))
         elif outcome == "rateLimited":
+            detail = f"{feature} has reached its temporary runtime rate limit and needs a retry later"
             candidates.append((
                 55,
-                f"{feature} has reached its temporary runtime rate limit. In your reply, briefly tell the user that {feature} needs a retry later.",
+                _runtime_warning_message(detail),
                 action,
             ))
         elif mode in ("onDemand", "postQuota"):
+            detail = f"{feature} is in constrained mode and using {_runtime_mode_label(mode)}"
             candidates.append((
                 40,
-                f"{feature} is in constrained mode and using {_runtime_mode_label(mode)}. In your reply, briefly tell the user that {feature} is running in constrained mode.",
+                _runtime_warning_message(detail),
                 action,
             ))
 
@@ -402,9 +411,10 @@ def format_runtime_state_notice(runtime_state: Any) -> str:
                 and numbers["remaining"] <= max(5, numbers["capacity"] * 0.02)
             )
             if state_name == "exhausted":
+                detail = f"{feature} has exhausted its {label} and is in constrained mode"
                 candidates.append((
                     45,
-                    f"{feature} has exhausted its {label}. In your reply, briefly tell the user that {feature} is in constrained mode.",
+                    _runtime_warning_message(detail),
                     action,
                 ))
             elif (numbers["percent"] is not None and numbers["percent"] >= RUNTIME_URGENT_PERCENT) or absolute_urgent:
@@ -415,7 +425,7 @@ def format_runtime_state_notice(runtime_state: Any) -> str:
                 )
                 candidates.append((
                     35,
-                    f"{feature} {usage}. In your reply, briefly tell the user that {feature} is almost out of runtime quota.",
+                    _runtime_warning_message(f"{feature} {usage} and is almost out of runtime quota"),
                     action,
                 ))
             elif state_name == "warning" or (numbers["percent"] is not None and numbers["percent"] >= RUNTIME_WARNING_PERCENT):
@@ -426,7 +436,7 @@ def format_runtime_state_notice(runtime_state: Any) -> str:
                 )
                 candidates.append((
                     25,
-                    f"{feature} {usage}. In your reply, briefly tell the user that {feature} is nearing its runtime quota.",
+                    _runtime_warning_message(f"{feature} {usage} and is nearing its runtime quota"),
                     action,
                 ))
 

@@ -5,7 +5,7 @@ import requests
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 
-from tools.mem9_errors import build_mem9_error_payload
+from tools.mem9_errors import build_mem9_error_payload, fetch_runtime_state_notice
 
 
 class MemoryStoreTool(Tool):
@@ -62,6 +62,7 @@ class MemoryStoreTool(Tool):
             "X-Mnemo-Agent-Id": agent_id,
             "X-API-Key": api_key,
         }
+        runtime_state_notice = fetch_runtime_state_notice(base_url, api_key, agent_id)
 
         body: dict[str, Any] = {
             "messages": [{"role": "user", "content": content}],
@@ -89,6 +90,8 @@ class MemoryStoreTool(Tool):
                 "searchable_now": not is_async,
                 "session_id": session_id or None,
             }
+            if runtime_state_notice:
+                result["runtime_state_notice"] = runtime_state_notice
             if is_async:
                 result["hint"] = (
                     "Stored asynchronously. Smart extraction is in progress "

@@ -5,7 +5,7 @@ import requests
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 
-from tools.mem9_errors import build_mem9_error_payload
+from tools.mem9_errors import build_mem9_error_payload, fetch_runtime_state_notice
 
 
 class MemorySearchTool(Tool):
@@ -71,6 +71,7 @@ class MemorySearchTool(Tool):
             "X-Mnemo-Agent-Id": agent_id,
             "X-API-Key": api_key,
         }
+        runtime_state_notice = fetch_runtime_state_notice(base_url, api_key, agent_id)
 
         params: dict[str, str] = {"q": query, "limit": str(upstream_limit)}
         if session_id:
@@ -98,6 +99,8 @@ class MemorySearchTool(Tool):
                 "available_result_count": len(raw_memories),
                 "session_id": session_id or None,
             }
+            if runtime_state_notice:
+                base_result["runtime_state_notice"] = runtime_state_notice
 
             if not raw_memories:
                 base_result["memories"] = []

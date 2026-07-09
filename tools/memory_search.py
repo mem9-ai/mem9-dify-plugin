@@ -5,7 +5,7 @@ import requests
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 
-from tools.mem9_errors import build_mem9_error_payload, fetch_runtime_state_notice
+from tools.mem9_errors import build_mem9_error_payload, response_message
 from tools.mem9_headers import mem9_headers
 
 
@@ -69,7 +69,6 @@ class MemorySearchTool(Tool):
 
         url = f"{base_url}/v1alpha2/mem9s/memories"
         headers = mem9_headers(api_key, agent_id)
-        runtime_state_notice = fetch_runtime_state_notice(base_url, api_key, agent_id)
 
         params: dict[str, str] = {"q": query, "limit": str(upstream_limit)}
         if session_id:
@@ -89,6 +88,7 @@ class MemorySearchTool(Tool):
             data = resp.json()
             raw_memories = data.get("memories", [])
             session_scoped = bool(session_id)
+            message = response_message(data)
 
             base_result: dict[str, Any] = {
                 "ok": True,
@@ -97,8 +97,8 @@ class MemorySearchTool(Tool):
                 "available_result_count": len(raw_memories),
                 "session_id": session_id or None,
             }
-            if runtime_state_notice:
-                base_result["runtime_state_notice"] = runtime_state_notice
+            if message:
+                base_result["message"] = message
 
             if not raw_memories:
                 base_result["memories"] = []

@@ -480,6 +480,18 @@ def fetch_runtime_state_notice(
     return notice
 
 
+def response_message(payload: Any) -> str:
+    body = _as_dict(payload)
+    if not body:
+        return ""
+
+    direct_message = _text(body.get("message"))
+    if direct_message:
+        return direct_message
+
+    return format_runtime_state_notice(body.get("runtimeState"))
+
+
 def response_json(response: requests.Response) -> Any:
     try:
         return response.json()

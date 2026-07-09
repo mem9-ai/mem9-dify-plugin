@@ -9,6 +9,7 @@ from tools.mem9_errors import (
     fetch_runtime_state_notice,
     format_provider_error,
     format_runtime_state_notice,
+    response_message,
 )
 from tools.mem9_headers import MEM9_PLUGIN_USER_AGENT
 
@@ -282,6 +283,36 @@ def test_format_runtime_state_notice_renders_inactive_api_key():
 
     assert "Mem9 API key is inactive" in notice
     assert "rerun mem9 setup or create a new mem9 API key" in notice
+
+
+def test_response_message_prefers_success_message():
+    message = response_message({
+        "message": "mem9 recall has used 80% of included quota.",
+        "runtimeState": {
+            "mem9ApiKey": {"status": "inactive"},
+        },
+    })
+
+    assert message == "mem9 recall has used 80% of included quota."
+
+
+def test_response_message_falls_back_to_runtime_state():
+    message = response_message({
+        "runtimeState": {
+            "mem9ApiKey": {"status": "active"},
+            "meters": [{
+                "meter": "memory_recall_requests",
+                "budgets": [{
+                    "type": "includedQuota",
+                    "state": "warning",
+                    "usage": {"percent": 82, "remaining": 18},
+                    "capacity": {"type": "limited", "value": 100},
+                }],
+            }],
+        },
+    })
+
+    assert "mem9 recall is at 82% of its included quota" in message
 
 
 def test_fetch_runtime_state_notice_fetches_and_caches(monkeypatch):

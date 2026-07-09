@@ -5,7 +5,7 @@ import requests
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 
-from tools.mem9_errors import build_mem9_error_payload, fetch_runtime_state_notice
+from tools.mem9_errors import build_mem9_error_payload, response_message
 from tools.mem9_headers import mem9_headers
 
 
@@ -59,7 +59,6 @@ class MemoryStoreTool(Tool):
 
         url = f"{base_url}/v1alpha2/mem9s/memories"
         headers = mem9_headers(api_key, agent_id, content_type_json=True)
-        runtime_state_notice = fetch_runtime_state_notice(base_url, api_key, agent_id)
 
         body: dict[str, Any] = {
             "messages": [{"role": "user", "content": content}],
@@ -76,6 +75,7 @@ class MemoryStoreTool(Tool):
                 return
 
             data = resp.json()
+            message = response_message(data)
             # Server contract: HTTP body emits only "ok" (sync) or "accepted" (async).
             # Revisit `is_async` if other statuses (failed/partial) ever appear here.
             status = data.get("status", "accepted")
@@ -87,8 +87,8 @@ class MemoryStoreTool(Tool):
                 "searchable_now": not is_async,
                 "session_id": session_id or None,
             }
-            if runtime_state_notice:
-                result["runtime_state_notice"] = runtime_state_notice
+            if message:
+                result["message"] = message
             if is_async:
                 result["hint"] = (
                     "Stored asynchronously. Smart extraction is in progress "

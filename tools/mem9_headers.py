@@ -1,4 +1,18 @@
-MEM9_PLUGIN_USER_AGENT = "mem9-plugin/dify/0.0.4"
+from pathlib import Path
+
+
+def _read_plugin_version() -> str:
+    manifest_path = Path(__file__).resolve().parents[1] / "manifest.yaml"
+    try:
+        for line in manifest_path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("version:"):
+                return line.split(":", 1)[1].strip().strip("'\"") or "unknown"
+    except OSError:
+        return "unknown"
+    return "unknown"
+
+
+MEM9_PLUGIN_USER_AGENT = f"mem9-plugin/dify/{_read_plugin_version()}"
 
 
 def mem9_headers(

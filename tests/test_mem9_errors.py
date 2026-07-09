@@ -10,6 +10,7 @@ from tools.mem9_errors import (
     format_provider_error,
     format_runtime_state_notice,
 )
+from tools.mem9_headers import MEM9_PLUGIN_USER_AGENT
 
 
 CLAIM_URL = "https://console.mem9.ai/console/claim?key=mem9_test"
@@ -315,7 +316,7 @@ def test_fetch_runtime_state_notice_fetches_and_caches(monkeypatch):
         {
             "X-Mnemo-Agent-Id": "dify",
             "X-API-Key": "key-1",
-            "User-Agent": "mem9-plugin/dify/0.0.4",
+            "User-Agent": MEM9_PLUGIN_USER_AGENT,
         },
         8,
     )]

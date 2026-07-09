@@ -312,7 +312,11 @@ def test_fetch_runtime_state_notice_fetches_and_caches(monkeypatch):
     assert second == ""
     assert calls == [(
         "https://api.mem9.ai/v1alpha2/mem9s/runtime-state",
-        {"X-Mnemo-Agent-Id": "dify", "X-API-Key": "key-1"},
+        {
+            "X-Mnemo-Agent-Id": "dify",
+            "X-API-Key": "key-1",
+            "User-Agent": "mem9-plugin/dify/0.0.4",
+        },
         8,
     )]
 

@@ -3,6 +3,8 @@ from typing import Any
 
 import requests
 
+from tools.mem9_headers import mem9_headers
+
 
 QUOTA_CODES = {
     "quota_exhausted",
@@ -462,10 +464,7 @@ def fetch_runtime_state_notice(
     try:
         response = requests.get(
             f"{cache_key[0]}/v1alpha2/mem9s/runtime-state",
-            headers={
-                "X-Mnemo-Agent-Id": agent_id,
-                "X-API-Key": api_key,
-            },
+            headers=mem9_headers(api_key, agent_id),
             timeout=timeout,
         )
     except requests.RequestException:

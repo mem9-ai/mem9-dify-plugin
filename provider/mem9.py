@@ -5,6 +5,7 @@ from dify_plugin import ToolProvider
 from dify_plugin.errors.tool import ToolProviderCredentialValidationError
 
 from tools.mem9_errors import format_provider_error
+from tools.mem9_headers import mem9_headers
 
 
 class Mem9Provider(ToolProvider):
@@ -33,10 +34,7 @@ class Mem9Provider(ToolProvider):
         agent_id = credentials.get("mem9_agent_id", "") or "dify"
 
         url = f"{base_url}/v1alpha2/mem9s/memories"
-        headers: dict[str, str] = {
-            "X-Mnemo-Agent-Id": agent_id,
-            "X-API-Key": api_key,
-        }
+        headers = mem9_headers(api_key, agent_id)
 
         try:
             resp = requests.get(url, headers=headers, params={"limit": "1"}, timeout=15)

@@ -6,6 +6,7 @@ from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 
 from tools.mem9_errors import build_mem9_error_payload, fetch_runtime_state_notice
+from tools.mem9_headers import mem9_headers
 
 
 class MemorySearchTool(Tool):
@@ -67,10 +68,7 @@ class MemorySearchTool(Tool):
         upstream_limit = min(max(limit * 3, limit), 100)
 
         url = f"{base_url}/v1alpha2/mem9s/memories"
-        headers: dict[str, str] = {
-            "X-Mnemo-Agent-Id": agent_id,
-            "X-API-Key": api_key,
-        }
+        headers = mem9_headers(api_key, agent_id)
         runtime_state_notice = fetch_runtime_state_notice(base_url, api_key, agent_id)
 
         params: dict[str, str] = {"q": query, "limit": str(upstream_limit)}

@@ -77,7 +77,7 @@ parameters:
       - the user's full original utterance copied verbatim
     form: llm
   - name: api_key
-    type: string
+    type: secret-input
     required: false
     label:
       en_US: API Key (Multi-space mode)
@@ -86,12 +86,10 @@ parameters:
       en_US: >-
         mem9 API Key for this call. Required when the plugin Authorization
         Mode is Multi-space; ignored in Single space mode. For security,
-        bind this to a Dify workspace environment variable
-        (e.g. {{env.MEM9_API_KEY_TEAM_A}}) rather than pasting the key.
+        bind this field to a Dify Secret environment variable.
       zh_Hans: >-
         本次调用使用的 mem9 API 密钥。插件授权模式为多空间时必填；
-        单空间模式下忽略。出于安全考虑，建议将此处绑定到 Dify 工作空间级
-        环境变量（例如 {{env.MEM9_API_KEY_TEAM_A}}），而不是直接粘贴密钥。
+        单空间模式下忽略。出于安全考虑，请将此字段绑定到 Dify 的密钥环境变量。
     form: form
   - name: session_id
     type: string

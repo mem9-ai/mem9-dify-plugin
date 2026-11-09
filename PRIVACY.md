@@ -34,7 +34,7 @@ The plugin may process and transmit the following information:
 
 5. API credentials
    - The `mem9_api_key` is stored by the Dify instance as a plugin credential and transmitted to the configured mem9 API endpoint in the `X-API-Key` header for authentication and tenant identification.
-   - When the plugin is configured in Multi-space Authorization Mode, an additional API Key may be supplied as a parameter on each workflow node (`api_key`). The plugin reads it only at call time and passes it to mem9 in the `X-API-Key` header. The plugin does not persist this node-level API Key beyond the call. Operators may bind this parameter to a Dify workspace environment variable so the actual key value is not stored in the workflow definition.
+   - In Multi-space Authorization Mode, each node's `api_key` parameter is declared as a Dify secret input. The plugin uses the key at call time in the `X-API-Key` header and uses a hash of the key for its in-memory notice cache. Operators can bind the parameter to a Dify environment variable of type Secret so the node stores a reference to the variable.
    - The plugin does not intentionally expose API keys to language model outputs or store API keys as memories.
 
 Following Dify's privacy classification guidance, this plugin may process indirect identifiers such as session IDs and agent IDs, and may process user-provided content that can be combined with other data to identify a person if such content is submitted to the memory tools.

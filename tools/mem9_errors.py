@@ -1,4 +1,5 @@
 import time
+from hashlib import sha256
 from typing import Any
 
 import requests
@@ -455,7 +456,8 @@ def fetch_runtime_state_notice(
     *,
     timeout: int = 8,
 ) -> str:
-    cache_key = (base_url.rstrip("/"), api_key, agent_id)
+    key_digest = sha256(api_key.encode("utf-8")).hexdigest()
+    cache_key = (base_url.rstrip("/"), key_digest, agent_id)
     now = time.monotonic()
     cached = _RUNTIME_STATE_NOTICE_CACHE.get(cache_key)
     if cached and now - cached[0] < RUNTIME_STATE_NOTICE_TTL_SECONDS:

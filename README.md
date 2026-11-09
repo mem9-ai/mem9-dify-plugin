@@ -42,19 +42,9 @@ Select `Multi-space` and leave the API Key field empty. Each workflow node must 
 - The `API Key` field on every Memory Search / Memory Store node becomes effectively required.
 - The provider-level `API Key` field stays visible but is ignored in this mode.
 
-**Recommended: bind workflow node API Keys to Dify environment variables** rather than pasting the key into each node:
+In the Dify workflow, create a **Secret** environment variable for each space, such as `MEM9_API_KEY_TEAM_A`. Bind each Memory Search or Memory Store node's **API Key** field to the variable for its space.
 
-```
-# In your Dify workspace, define environment variables:
-MEM9_API_KEY_TEAM_A = sk-...
-MEM9_API_KEY_TEAM_B = sk-...
-
-# In each workflow node, reference the variable:
-Memory Search node → API Key: {{env.MEM9_API_KEY_TEAM_A}}
-Memory Store node  → API Key: {{env.MEM9_API_KEY_TEAM_A}}
-```
-
-This keeps real keys out of the workflow JSON and lets you switch spaces by re-binding the variable, instead of editing every node. Pasting the key directly into a node is supported as a fallback but is not recommended.
+The workflow node stores a reference to the secret variable. If you pasted a key into a node before this update, rotate that key and bind the replacement through a secret variable. Earlier workflow versions and exports may still contain the old value.
 
 > **Agent apps note.** Agent apps can also set a tool-level API Key on each tool, but the value is static for the whole app — multi-space is most useful in Workflow apps where different nodes can carry different keys.
 
